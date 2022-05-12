@@ -1,3 +1,19 @@
+// Localities API
+//
+// This is a sample localities API.
+//
+//	Schemes: http
+//  Host: localhost:8080
+//	BasePath: /
+//	Version: 1.0.0
+//	Contact: Iulian Coretchi <iulian.coretchi@gmail.com>
+//
+//	Consumes:
+//	- application/json
+//
+//	Produces:
+//	- application/json
+// swagger:meta
 package main
 
 import (
@@ -8,7 +24,9 @@ import (
 	"strconv"
 )
 
+// swagger:parameters localities newLocality
 type Locality struct {
+	//swagger:ignore
 	Code            int    `json:"code"`
 	StatisticalCode int    `json:"statisticalCode"`
 	Name            string `json:"name"`
@@ -24,6 +42,16 @@ func init() {
 	_ = json.Unmarshal([]byte(file), &localities)
 }
 
+// swagger:operation POST /localities  newLocality
+// Create a new locality
+// ---
+// produces:
+// - application/json
+// responses:
+//     '200':
+//         description: Successful operation
+//     '400':
+//         description: Invalid input
 func NewLocalityHandler(c *gin.Context) {
 	var locality Locality
 	if err := c.ShouldBindJSON(&locality); err != nil {
@@ -35,10 +63,36 @@ func NewLocalityHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, locality)
 }
 
+// swagger:operation GET /localities  listLocalities
+// Returns list of localities
+// ---
+// produces:
+// - application/json
+// responses:
+//     '200':
+//         description: Successful operation
 func ListLocalitiesHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, localities)
 }
 
+// swagger:operation PUT /localities/{code} updateLocality
+// Update an existing locality
+// ---
+// parameters:
+// - name: code
+//   in: path
+//   description: Code of the locality
+//   required: true
+//   type: string
+// produces:
+// - application/json
+// responses:
+//     '200':
+//         description: Successful operation
+//     '400':
+//         description: Invalid input
+//     '404':
+//         description: Invalid locality Code
 func UpdateLocalityHandler(c *gin.Context) {
 	code, err := strconv.Atoi(c.Param("code"))
 	if err != nil {
@@ -70,6 +124,22 @@ func UpdateLocalityHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, locality)
 }
 
+// swagger:operation DELETE /localities/{code} deleteLocality
+// Delete an existing locality
+// ---
+// produces:
+// - application/json
+// parameters:
+//   - name: code
+//     in: path
+//     description: Code of the locality
+//     required: true
+//     type: string
+// responses:
+//     '200':
+//         description: Successful operation
+//     '404':
+//         description: Invalid recipe ID
 func DeleteLocalityHandler(c *gin.Context) {
 	code, err := strconv.Atoi(c.Param("code"))
 	if err != nil {
@@ -95,6 +165,22 @@ func DeleteLocalityHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Locality has been deleted"})
 }
 
+// swagger:operation GET /localities/{code} getLocality
+// Get one locality
+// ---
+// produces:
+// - application/json
+// parameters:
+//   - name: code
+//     in: path
+//     description: Code of the locality
+//     required: true
+//     type: string
+// responses:
+//     '200':
+//         description: Successful operation
+//     '404':
+//         description: Invalid recipe ID
 func GetLocalityHandler(c *gin.Context) {
 	code, err := strconv.Atoi(c.Param("code"))
 	if err != nil {

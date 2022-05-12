@@ -1,0 +1,107 @@
+basePath: /
+consumes:
+- application/json
+host: localhost:8080
+info:
+  contact:
+    email: iulian.coretchi@gmail.com
+    name: Iulian Coretchi
+  description: This is a sample localities API.
+  title: Localities API
+  version: 1.0.0
+paths:
+  /localities:
+    get:
+      description: Returns list of localities
+      operationId: listLocalities
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful operation
+    post:
+      description: Create a new locality
+      operationId: newLocality
+      parameters:
+      - format: int64
+        in: query
+        name: statisticalCode
+        type: integer
+        x-go-name: StatisticalCode
+      - in: query
+        name: name
+        type: string
+        x-go-name: Name
+      - format: int64
+        in: query
+        name: status
+        type: integer
+        x-go-name: Status
+      - format: int64
+        in: query
+        name: parentCode
+        type: integer
+        x-go-name: ParentCode
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful operation
+        "400":
+          description: Invalid input
+  /localities/{code}:
+    delete:
+      description: Delete an existing locality
+      operationId: deleteLocality
+      parameters:
+      - description: Code of the locality
+        in: path
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful operation
+        "404":
+          description: Invalid recipe ID
+    get:
+      description: Get one locality
+      operationId: getLocality
+      parameters:
+      - description: Code of the locality
+        in: path
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful operation
+        "404":
+          description: Invalid recipe ID
+    put:
+      description: Update an existing locality
+      operationId: updateLocality
+      parameters:
+      - description: Code of the locality
+        in: path
+        name: code
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successful operation
+        "400":
+          description: Invalid input
+        "404":
+          description: Invalid locality Code
+produces:
+- application/json
+schemes:
+- http
+swagger: "2.0"
