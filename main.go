@@ -39,7 +39,7 @@ func ListLocalitiesHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, localities)
 }
 
-func UpdateRecipeHandler(c *gin.Context) {
+func UpdateLocalityHandler(c *gin.Context) {
 	code, err := strconv.Atoi(c.Param("code"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -73,6 +73,6 @@ func main() {
 	router := gin.Default()
 	router.POST("/localities", NewLocalityHandler)
 	router.GET("/localities", ListLocalitiesHandler)
-	router.PUT("/localities/:code", UpdateRecipeHandler)
+	router.PUT("/localities/:code", UpdateLocalityHandler)
 	router.Run()
 }
