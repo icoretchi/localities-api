@@ -1,22 +1,26 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/gin-gonic/gin"
+	"io/ioutil"
 	"net/http"
 )
 
 type Locality struct {
-	Code            string `json:"code"`
-	StatisticalCode string `json:"statisticalCode"`
+	Code            int    `json:"code"`
+	StatisticalCode int    `json:"statisticalCode"`
 	Name            string `json:"name"`
-	Status          string `json:"status"`
-	ParentCode      string `json:"parentCode"`
+	Status          int    `json:"status"`
+	ParentCode      int    `json:"parentCode"`
 }
 
 var localities []Locality
 
 func init() {
 	localities = make([]Locality, 0)
+	file, _ := ioutil.ReadFile("localities.json")
+	_ = json.Unmarshal([]byte(file), &localities)
 }
 
 func NewLocalityHandler(c *gin.Context) {
@@ -30,8 +34,13 @@ func NewLocalityHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, locality)
 }
 
+func ListLocalitiesHandler(c *gin.Context) {
+	c.JSON(http.StatusOK, localities)
+}
+
 func main() {
 	router := gin.Default()
 	router.POST("/localities", NewLocalityHandler)
+	router.GET("/localities", ListLocalitiesHandler)
 	router.Run()
 }
