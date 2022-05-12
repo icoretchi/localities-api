@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 )
 
 type Locality struct {
@@ -38,9 +39,40 @@ func ListLocalitiesHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, localities)
 }
 
+func UpdateRecipeHandler(c *gin.Context) {
+	code, err := strconv.Atoi(c.Param("code"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	var locality Locality
+	if err := c.ShouldBindJSON(&locality); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	index := -1
+	for i := 0; i < len(localities); i++ {
+		if localities[i].Code == code {
+			index = i
+			break
+		}
+	}
+
+	if index == -1 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Locality not found"})
+		return
+	}
+
+	localities[index] = locality
+
+	c.JSON(http.StatusOK, locality)
+}
+
 func main() {
 	router := gin.Default()
 	router.POST("/localities", NewLocalityHandler)
 	router.GET("/localities", ListLocalitiesHandler)
+	router.PUT("/localities/:code", UpdateRecipeHandler)
 	router.Run()
 }
