@@ -95,11 +95,28 @@ func DeleteLocalityHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Locality has been deleted"})
 }
 
+func GetLocalityHandler(c *gin.Context) {
+	code, err := strconv.Atoi(c.Param("code"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	for i := 0; i < len(localities); i++ {
+		if localities[i].Code == code {
+			c.JSON(http.StatusOK, localities[i])
+			return
+		}
+	}
+
+	c.JSON(http.StatusNotFound, gin.H{"error": "Locality not found"})
+}
+
 func main() {
 	router := gin.Default()
 	router.POST("/localities", NewLocalityHandler)
 	router.GET("/localities", ListLocalitiesHandler)
 	router.PUT("/localities/:code", UpdateLocalityHandler)
 	router.DELETE("/localities/:code", DeleteLocalityHandler)
+	router.GET("/localities/:code", GetLocalityHandler)
 	router.Run()
 }
