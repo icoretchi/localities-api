@@ -17,192 +17,46 @@
 package main
 
 import (
-	"encoding/json"
+	"context"
 	"github.com/gin-gonic/gin"
-	"io/ioutil"
-	"net/http"
-	"strconv"
+	"github.com/go-redis/redis"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"localities-api/handlers"
+	"log"
+	"os"
 )
 
-// swagger:parameters localities newLocality
-type Locality struct {
-	//swagger:ignore
-	Code            int    `json:"code"`
-	StatisticalCode int    `json:"statisticalCode"`
-	Name            string `json:"name"`
-	Status          int    `json:"status"`
-	ParentCode      int    `json:"parentCode"`
-}
-
-var localities []Locality
+var localitiesHandler *handlers.LocalitiesHandler
 
 func init() {
-	localities = make([]Locality, 0)
-	file, _ := ioutil.ReadFile("localities.json")
-	_ = json.Unmarshal([]byte(file), &localities)
-}
-
-// swagger:operation POST /localities  newLocality
-// Create a new locality
-// ---
-// produces:
-// - application/json
-// responses:
-//     '200':
-//         description: Successful operation
-//     '400':
-//         description: Invalid input
-func NewLocalityHandler(c *gin.Context) {
-	var locality Locality
-	if err := c.ShouldBindJSON(&locality); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error()})
-		return
+	ctx := context.Background()
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(os.Getenv("MONGO_URI")))
+	if err = client.Ping(context.TODO(), readpref.Primary()); err != nil {
+		log.Fatal(err)
 	}
-	localities = append(localities, locality)
-	c.JSON(http.StatusOK, locality)
-}
+	log.Println("Connected to MongoDB")
+	collection := client.Database(os.Getenv("MONGO_DATABASE")).Collection("localities")
 
-// swagger:operation GET /localities  listLocalities
-// Returns list of localities
-// ---
-// produces:
-// - application/json
-// responses:
-//     '200':
-//         description: Successful operation
-func ListLocalitiesHandler(c *gin.Context) {
-	c.JSON(http.StatusOK, localities)
-}
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "",
+		DB:       0,
+	})
 
-// swagger:operation PUT /localities/{code} updateLocality
-// Update an existing locality
-// ---
-// parameters:
-// - name: code
-//   in: path
-//   description: Code of the locality
-//   required: true
-//   type: string
-// produces:
-// - application/json
-// responses:
-//     '200':
-//         description: Successful operation
-//     '400':
-//         description: Invalid input
-//     '404':
-//         description: Invalid locality Code
-func UpdateLocalityHandler(c *gin.Context) {
-	code, err := strconv.Atoi(c.Param("code"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+	status := redisClient.Ping()
+	log.Println(status)
 
-	var locality Locality
-	if err := c.ShouldBindJSON(&locality); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	index := -1
-	for i := 0; i < len(localities); i++ {
-		if localities[i].Code == code {
-			index = i
-			break
-		}
-	}
-
-	if index == -1 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Locality not found"})
-		return
-	}
-
-	localities[index] = locality
-
-	c.JSON(http.StatusOK, locality)
-}
-
-// swagger:operation DELETE /localities/{code} deleteLocality
-// Delete an existing locality
-// ---
-// produces:
-// - application/json
-// parameters:
-//   - name: code
-//     in: path
-//     description: Code of the locality
-//     required: true
-//     type: string
-// responses:
-//     '200':
-//         description: Successful operation
-//     '404':
-//         description: Invalid recipe ID
-func DeleteLocalityHandler(c *gin.Context) {
-	code, err := strconv.Atoi(c.Param("code"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	index := -1
-	for i := 0; i < len(localities); i++ {
-		if localities[i].Code == code {
-			index = i
-			break
-		}
-	}
-
-	if index == -1 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Locality not found"})
-		return
-	}
-
-	localities = append(localities[:index], localities[index+1:]...)
-
-	c.JSON(http.StatusOK, gin.H{"message": "Locality has been deleted"})
-}
-
-// swagger:operation GET /localities/{code} getLocality
-// Get one locality
-// ---
-// produces:
-// - application/json
-// parameters:
-//   - name: code
-//     in: path
-//     description: Code of the locality
-//     required: true
-//     type: string
-// responses:
-//     '200':
-//         description: Successful operation
-//     '404':
-//         description: Invalid recipe ID
-func GetLocalityHandler(c *gin.Context) {
-	code, err := strconv.Atoi(c.Param("code"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	for i := 0; i < len(localities); i++ {
-		if localities[i].Code == code {
-			c.JSON(http.StatusOK, localities[i])
-			return
-		}
-	}
-
-	c.JSON(http.StatusNotFound, gin.H{"error": "Locality not found"})
+	localitiesHandler = handlers.NewLocalitiesHandler(ctx, collection, redisClient)
 }
 
 func main() {
 	router := gin.Default()
-	router.POST("/localities", NewLocalityHandler)
-	router.GET("/localities", ListLocalitiesHandler)
-	router.PUT("/localities/:code", UpdateLocalityHandler)
-	router.DELETE("/localities/:code", DeleteLocalityHandler)
-	router.GET("/localities/:code", GetLocalityHandler)
+	router.POST("/localities", localitiesHandler.NewLocalityHandler)
+	router.GET("/localities", localitiesHandler.ListLocalitiesHandler)
+	router.PUT("/localities/:code", localitiesHandler.UpdateLocalityHandler)
+	router.DELETE("/localities/:code", localitiesHandler.DeleteLocalityHandler)
+	router.GET("/localities/:code", localitiesHandler.GetOneLocalityHandler)
 	router.Run()
 }
