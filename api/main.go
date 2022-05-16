@@ -28,6 +28,7 @@ import (
 	"os"
 )
 
+var authHandler *handlers.AuthHandler
 var localitiesHandler *handlers.LocalitiesHandler
 
 func init() {
@@ -49,10 +50,14 @@ func init() {
 	log.Println(status)
 
 	localitiesHandler = handlers.NewLocalitiesHandler(ctx, collection, redisClient)
+	collectionUsers := client.Database(os.Getenv("MONGO_DATABASE")).Collection("users")
+	authHandler = handlers.NewAuthHandler(ctx, collectionUsers)
 }
 
 func main() {
 	router := gin.Default()
+	router.POST("/signin", authHandler.SignInHandler)
+	router.POST("/refresh", authHandler.RefreshHandler)
 	router.POST("/localities", localitiesHandler.NewLocalityHandler)
 	router.GET("/localities", localitiesHandler.ListLocalitiesHandler)
 	router.PUT("/localities/:code", localitiesHandler.UpdateLocalityHandler)
