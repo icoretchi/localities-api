@@ -7,7 +7,7 @@ import (
 	"github.com/go-redis/redis"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"localities-api/api/models"
+	"localities-api/models"
 	"log"
 	"net/http"
 	"strconv"
